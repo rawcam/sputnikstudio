@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Sputnik Studio v6.0.1 — Wiki</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* ========== БАЗОВЫЕ СТИЛИ (аналогичны основному приложению) ========== */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Segoe UI', sans-serif; }
+        :root {
+            --bg-page: #f4f7fb;
+            --bg-panel: #ffffff;
+            --text-primary: #1e2b3c;
+            --text-secondary: #4a5a6e;
+            --border-light: #d9e1ec;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --card-bg: #f9fcff;
+            --shadow: 0 8px 20px -8px rgba(0,20,40,0.15);
+            --sidebar-width: 280px;
+            --sidebar-collapsed-width: 70px;
+        }
+        body.dark {
+            --bg-page: #121212;
+            --bg-panel: #1e1e1e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --border-light: #333333;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --card-bg: #2a2a2a;
+            --shadow: 0 8px 20px -8px rgba(0,0,0,0.7);
+        }
+        body {
+            background: var(--bg-page);
+            color: var(--text-primary);
+            transition: background 0.2s, color 0.2s;
+            overflow-x: hidden;
+        }
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        /* Боковое меню */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border-light);
+            flex-shrink: 0;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            transition: width 0.2s ease;
+            z-index: 10;
+        }
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sidebar.collapsed .sidebar-header {
+            padding: 16px 8px;
+            justify-content: center;
+        }
+        .sidebar-header h2 {
+            font-size: 1rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        .sidebar.collapsed .sidebar-header h2 {
+            display: none;
+        }
+        .collapse-btn {
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            width: 24px;
+            text-align: center;
+        }
+        .collapse-btn:hover {
+            color: var(--accent);
+        }
+        .nav-menu {
+            padding: 16px 0;
+        }
+        .nav-item {
+            padding: 8px 16px;
+            margin: 4px 0;
+            cursor: pointer;
+            transition: 0.2s;
+            border-left: 3px solid transparent;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sidebar.collapsed .nav-item span {
+            display: none;
+        }
+        .sidebar.collapsed .nav-item {
+            justify-content: center;
+            padding: 8px 0;
+        }
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+        .nav-item:hover {
+            background: var(--card-bg);
+            border-left-color: var(--accent);
+        }
+        .nav-item.active {
+            background: var(--card-bg);
+            border-left-color: var(--accent);
+            color: var(--accent);
+            font-weight: 500;
+        }
+        /* Основное содержимое */
+        .main-content {
+            flex: 1;
+            padding: 30px 40px;
+            max-width: calc(100% - var(--sidebar-width));
+            transition: max-width 0.2s;
+        }
+        .sidebar.collapsed ~ .main-content {
+            max-width: calc(100% - var(--sidebar-collapsed-width));
+        }
+        .section {
+            margin-bottom: 50px;
+            scroll-margin-top: 20px;
+        }
+        .section h2 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--accent);
+            display: inline-block;
+        }
+        .section h3 {
+            font-size: 1.3rem;
+            margin: 25px 0 15px;
+            color: var(--accent);
+        }
+        .section h4 {
+            font-size: 1.1rem;
+            margin: 20px 0 10px;
+        }
+        .section p, .section li {
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .demo-device {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            width: 300px;
+            margin: 20px 0;
+            transition: all 0.2s;
+        }
+        .demo-device.expanded {
+            padding: 8px 12px;
+        }
+        .demo-device.collapsed {
+            padding: 4px 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .demo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .demo-collapse-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        .demo-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border-light);
+        }
+        .demo-control-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid var(--border-light);
+            padding: 10px 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background: var(--card-bg);
+            font-weight: 600;
+        }
+        code {
+            background: var(--card-bg);
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.85em;
+        }
+        .glossary-term {
+            font-weight: 600;
+            color: var(--accent);
+        }
+        .footnote {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 16px;
+            border-top: 1px solid var(--border-light);
+            padding-top: 16px;
+        }
+        .theme-switch {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--accent);
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            z-index: 100;
+            transition: 0.2s;
+        }
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 20px;
+            }
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+                z-index: 20;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .mobile-menu-toggle {
+                display: block;
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                background: var(--accent);
+                color: white;
+                width: 44px;
+                height: 44px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                z-index: 21;
+                box-shadow: var(--shadow);
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app-layout">
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-book"></i> Sputnik Wiki</h2>
+            <div class="collapse-btn" id="collapseSidebarBtn"><i class="fas fa-chevron-left"></i></div>
+        </div>
+        <div class="nav-menu" id="navMenu">
+            <div class="nav-item" data-section="overview"><i class="fas fa-info-circle"></i><span>Общее описание</span></div>
+            <div class="nav-item" data-section="qualification"><i class="fas fa-graduation-cap"></i><span>Квалификация инженера</span></div>
+            <div class="nav-item" data-section="glossary"><i class="fas fa-book-open"></i><span>Глоссарий</span></div>
+            <div class="nav-item" data-section="interfaces"><i class="fas fa-plug"></i><span>Интерфейсы подключений</span></div>
+            <div class="nav-item" data-section="device-card"><i class="fas fa-microchip"></i><span>Карточка устройства</span></div>
+            <div class="nav-item" data-section="video"><i class="fas fa-video"></i><span>Видео</span></div>
+            <div class="nav-item" data-section="network"><i class="fas fa-network-wired"></i><span>Сеть</span></div>
+            <div class="nav-item" data-section="led"><i class="fas fa-border-all"></i><span>LED</span></div>
+            <div class="nav-item" data-section="sound"><i class="fas fa-headphones"></i><span>Звук</span></div>
+            <div class="nav-item" data-section="vc"><i class="fas fa-chalkboard"></i><span>ВКС</span></div>
+            <div class="nav-item" data-section="tracts"><i class="fas fa-road"></i><span>Тракты</span></div>
+            <div class="nav-item" data-section="ergo"><i class="fas fa-chalkboard-user"></i><span>Эргономика</span></div>
+            <div class="nav-item" data-section="project"><i class="fas fa-save"></i><span>Управление проектом</span></div>
+        </div>
+    </div>
+    <div class="main-content">
+        <div class="section" id="overview">
+            <h2>Общее описание</h2>
+            <p><strong>Sputnik Studio</strong> — веб-приложение для профессионального проектирования аудиовизуальных систем. Оно позволяет рассчитывать параметры видеотрактов, сетевую нагрузку, LED-экраны, акустические характеристики, требования к видеоконференцсвязи и эргономику. Все расчёты выполняются в реальном времени, проект сохраняется в браузере и может быть экспортирован в JSON.</p>
+            <p>Интерфейс состоит из левой боковой панели (сайдбара) с аккордеонами разделов и основной рабочей области. Сайдбар можно сворачивать, оставляя только иконки, что удобно на небольших экранах.</p>
+            <p>Продукт разработан для инженеров по AV-системам, системных интеграторов, технических консультантов. Он помогает быстро оценить ключевые параметры на этапе концептуального проектирования.</p>
+        </div>
+
+        <div class="section" id="qualification">
+            <h2>Необходимая минимальная квалификация инженера</h2>
+            <p>Для эффективного использования Sputnik Studio рекомендуется иметь:</p>
+            <ul>
+                <li>Понимание основ передачи видеосигнала (разрешения, частоты кадров, субдискретизация, битрейт).</li>
+                <li>Знание сетевых технологий (Ethernet, коммутаторы, PoE, QoS, multicast).</li>
+                <li>Опыт проектирования LED-экранов (шаг пикселя, размеры кабинетов, разрешение).</li>
+                <li>Базовые знания акустики (SPL, реверберация, подбор громкоговорителей).</li>
+                <li>Понимание видеоконференцсвязи (кодеки, битрейт, многоточечные вызовы).</li>
+                <li>Умение интерпретировать результаты расчётов и применять их в реальных проектах.</li>
+            </ul>
+            <p>Программа не требует глубокого программирования, но знание терминологии AV-индустрии обязательно.</p>
+        </div>
+
+        <div class="section" id="glossary">
+            <h2>Глоссарий</h2>
+            <div class="card">
+                <h3>Основные термины</h3>
+                <p><span class="glossary-term">SPL</span> (Sound Pressure Level) — уровень звукового давления, измеряется в дБ. Показывает громкость звука в заданной точке.</p>
+                <p><span class="glossary-term">RT60</span> — время реверберации, за которое уровень звука в помещении снижается на 60 дБ после прекращения источника.</p>
+                <p><span class="glossary-term">PoE</span> (Power over Ethernet) — передача питания по сетевому кабелю. Стандарты: 802.3af (до 15.4 Вт), 802.3at (до 30 Вт), 802.3bt (до 90 Вт).</p>
+                <p><span class="glossary-term">QoS</span> (Quality of Service) — механизм приоритизации трафика в сетях.</p>
+                <p><span class="glossary-term">Multicast</span> — метод передачи данных от одного источника группе получателей, экономящий пропускную способность.</p>
+                <p><span class="glossary-term">Headroom</span> — запас по уровню сигнала, чтобы избежать искажений при пиковых нагрузках.</p>
+                <p><span class="glossary-term">Кодек</span> — алгоритм сжатия видео/аудио (H.264, H.265, MJPEG).</p>
+                <p><span class="glossary-term">MCU</span> (Multipoint Control Unit) — устройство для многоточечных видеоконференций.</p>
+            </div>
+        </div>
+
+        <div class="section" id="interfaces">
+            <h2>Интерфейсы подключений</h2>
+            <table>
+                <thead>
+                    <tr><th>Интерфейс</th><th>Версия</th><th>Макс. разрешение</th><th>Пропускная способность</th><th>Примечания</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>HDMI</td><td>1.4</td><td>4K@30</td><td>10.2 Гбит/с</td><td>Поддержка Ethernet, ARC</td></tr>
+                    <tr><td>HDMI</td><td>2.0</td><td>4K@60</td><td>18 Гбит/с</td><td>HDR, BT.2020</td></tr>
+                    <tr><td>HDMI</td><td>2.1</td><td>8K@60, 4K@120</td><td>48 Гбит/с</td><td>VRR, ALLM, eARC</td></tr>
+                    <tr><td>DisplayPort</td><td>1.4</td><td>8K@60</td><td>32.4 Гбит/с</td><td>DSC, HDR</td></tr>
+                    <tr><td>DisplayPort</td><td>2.0</td><td>16K@60</td><td>80 Гбит/с</td><td>USB-C Alt Mode</td></tr>
+                    <tr><td>USB</td><td>2.0</td><td>—</td><td>480 Мбит/с</td><td>Данные, питание до 2.5 Вт</td></tr>
+                    <tr><td>USB</td><td>3.2 Gen1</td><td>—</td><td>5 Гбит/с</td><td>USB 3.0</td></tr>
+                    <tr><td>USB</td><td>3.2 Gen2</td><td>—</td><td>10 Гбит/с</td><td>USB 3.1</td></tr>
+                    <tr><td>USB</td><td>4</td><td>DisplayPort Alt</td><td>40 Гбит/с</td><td>Thunderbolt 3</td></tr>
+                    <tr><td>SDI</td><td>3G-SDI</td><td>1080p@60</td><td>2.97 Гбит/с</td><td>Профессиональное видео</td></tr>
+                    <tr><td>SDI</td><td>12G-SDI</td><td>4K@60</td><td>11.88 Гбит/с</td><td>Один кабель</td></tr>
+                    <tr><td>HDBaseT</td><td>2.0</td><td>4K@60</td><td>до 100 м по Cat6</td><td>Питание, управление, Ethernet</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section" id="device-card">
+            <h2>Карточка устройства</h2>
+            <p>В разделе «Тракты» каждое устройство отображается в виде карточки. Карточка может быть в <strong>развёрнутом</strong> или <strong>свёрнутом</strong> виде. Управление:</p>
+            <ul>
+                <li><i class="fas fa-expand"></i> / <i class="fas fa-compress"></i> — сворачивание/разворачивание карточки.</li>
+                <li><i class="fas fa-times"></i> — удаление устройства.</li>
+                <li>Чекбоксы <strong>USB</strong>, <strong>PoE</strong>, <strong>Ethernet</strong> — включают соответствующие функции.</li>
+                <li>Поле <strong>Вт</strong> — ручное изменение потребляемой мощности.</li>
+            </ul>
+            <div class="demo-device expanded" id="demoDevice">
+                <div class="demo-header">
+                    <strong><i class="fas fa-desktop"></i> <span id="demoDeviceName">Типовой ПК #1</span></strong>
+                    <button class="demo-collapse-btn" id="demoCollapseBtn"><i class="fas fa-compress"></i></button>
+                </div>
+                <div class="device-info">Зад: 5 мс, USB нет</div>
+                <div class="demo-controls">
+                    <label class="demo-control-item"><input type="checkbox" id="demoUsb"> <span>USB</span></label>
+                    <label class="demo-control-item"><input type="checkbox" id="demoPoe"> <span>PoE</span></label>
+                    <label class="demo-control-item"><input type="checkbox" id="demoEth"> <span>Ethernet</span></label>
+                    <div class="demo-control-item"><i class="fas fa-plug"></i> <input type="number" id="demoPower" value="200" step="10" style="width:60px;"> Вт</div>
+                </div>
+            </div>
+            <p><em>Попробуйте нажать кнопку сворачивания, изменить чекбоксы или мощность — интерфейс имитирует поведение реальной карточки в приложении.</em></p>
+        </div>
+
+        <div class="section" id="video">
+            <h2>Видео</h2>
+            <p>Позволяет задать параметры видеосигнала: разрешение (1080p, 4K, 8K), субдискретизацию (4:4:4, 4:2:2, 4:2:0), частоту кадров, цветовое пространство (RGB/YCbCr) и глубину цвета (8/10/12 бит). На основе этих данных вычисляется базовый битрейт, который затем используется для оценки загрузки сети.</p>
+            <div class="formula"><strong>Формула:</strong> <code>bitrate = base * chromaFactor * colorSpaceFactor * bitDepthFactor * (fps/60)</code>, где base = 300 (1080p), 1000 (4K), 4000 (8K).</div>
+        </div>
+
+        <div class="section" id="network">
+            <h2>Сеть</h2>
+            <p>Выбор среды передачи (Cat5e…Cat8, оптика, беспровод), включение Multicast и QoS, тип сети (управляемая/неуправляемая), протокол синхронизации (PTP/NTP), резервирование. Эти параметры влияют на допустимую нагрузку, но в текущей версии используются для расчёта общей загрузки сети (отношение суммарного битрейта к минимальной пропускной способности коммутаторов).</p>
+        </div>
+
+        <div class="section" id="led">
+            <h2>LED</h2>
+            <p>Три режима расчёта LED‑экранов:</p>
+            <ul>
+                <li><strong>По кабинетам</strong> – выбор шага пикселя, типоразмера кабинета (600×337.5, 500×500, 640×480, 960×540 или свой), количество кабинетов по горизонтали и вертикали. Результат: физические размеры (м), разрешение, площадь, мощность.</li>
+                <li><strong>По разрешению</strong> – задаётся желаемое разрешение (Full HD, 4K, 8K или своё). Система подбирает ближайшее целое количество кабинетов (округляя вверх) и выводит реальное разрешение, размеры, количество кабинетов, площадь и мощность.</li>
+                <li><strong>Сшивка экранов</strong> – позволяет объединить несколько одинаковых LED‑экранов в один логический экран. Нужно выбрать ранее созданный LED‑экран из трактов и задать количество по горизонтали и вертикали.</li>
+            </ul>
+        </div>
+
+        <div class="section" id="sound">
+            <h2>Звук</h2>
+            <p>Пять режимов акустических расчётов:</p>
+            <ul>
+                <li><strong>SPL на расстоянии</strong> – уровень звукового давления для точечного источника с учётом чувствительности, мощности, расстояния, headroom и добавки на помещение.</li>
+                <li><strong>Падение SPL от расстояния</strong> – уменьшение громкости при увеличении дистанции для точечного и линейного источников.</li>
+                <li><strong>Изменение SPL от мощности</strong> – прирост уровня при увеличении подводимой мощности.</li>
+                <li><strong>RT60 (реверберация)</strong> – время реверберации по формуле Сэбина (0.161 * V / (α * S)).</li>
+                <li><strong>Подбор громкоговорителей</strong> – приблизительный расчёт количества потолочных колонок на основе размеров помещения, высоты потолка, мощности и чувствительности громкоговорителя, требуемого SPL.</li>
+            </ul>
+        </div>
+
+        <div class="section" id="vc">
+            <h2>ВКС (видеоконференции)</h2>
+            <p>Расчёт требуемого битрейта для видеоконференций. Доступны два режима:</p>
+            <ul>
+                <li><strong>Кодек</strong> – выбор платформы (TrueConf, Vinteo IVA, Cisco Webex, Poly, Yealink), разрешения, FPS, количества участников в P2P. Вычисляется битрейт отправки и приёма, рекомендация по каналу.</li>
+                <li><strong>Многоточечный вызов</strong> – аналогично, но для MCU‑конференции, где суммируются потоки от всех участников.</li>
+            </ul>
+            <p>Базовые значения битрейта для 1080p@30: TrueConf – 2.5 Мбит/с, Vinteo IVA (H.265) – 1.5 Мбит/с, Cisco Webex – 2.0 Мбит/с, Poly – 2.0 Мбит/с, Yealink – 1.8 Мбит/с.</p>
+        </div>
+
+        <div class="section" id="tracts">
+            <h2>Тракты</h2>
+            <p>Позволяет создавать сквозные тракты передачи сигнала от источника до приёмника. В тракт можно добавлять устройства: источники, передатчики, приёмники, коммутаторы, матрицы, LED‑процессоры, экраны и др. Для каждого устройства задаётся задержка, питание, наличие PoE, USB и другие параметры. Суммарная задержка тракта отображается в мс и кадрах. Также ведётся учёт сетевых портов, PoE‑бюджета и общей мощности.</p>
+        </div>
+
+        <div class="section" id="ergo">
+            <h2>Эргономика ЭКП</h2>
+            <p>Два калькулятора:</p>
+            <ul>
+                <li><strong>Расчёт расстояния/высоты символа</strong> – по угловым размерам (α) определяет максимальное расстояние до экрана по заданной высоте символа или минимальную высоту символа по известному расстоянию.</li>
+                <li><strong>Зона оптимальной видимости (ЗОВ)</strong> – позволяет задать координаты нескольких наблюдателей и оценить, какая часть строки на экране попадает в зону с углом ≥ критического. Итоговый коэффициент эргономики Кэ = (средняя доля зоны) × 10.</li>
+            </ul>
+            <div class="formula"><strong>Формулы:</strong> <code>h = L · tg(α)</code> | <code>L = h / tg(α)</code>, где α – угловой размер (0.25° – минимальная читаемость, 0.38° – оптимально, 0.55° – критическая информация).</div>
+        </div>
+
+        <div class="section" id="project">
+            <h2>Управление проектом</h2>
+            <p>Все данные сохраняются в локальном хранилище браузера. Кнопки в разделе «УПРАВЛЕНИЕ» позволяют:</p>
+            <ul>
+                <li><strong>Сохранить в браузере</strong> – записать текущий проект в localStorage.</li>
+                <li><strong>Экспорт JSON</strong> – выгрузить проект в файл для резервного копирования или обмена.</li>
+                <li><strong>Импорт JSON</strong> – загрузить ранее сохранённый проект.</li>
+                <li><strong>Печать отчёта</strong> – сформировать подробный отчёт в новой вкладке.</li>
+                <li><strong>Сброс проекта</strong> – удалить все данные и начать заново.</li>
+            </ul>
+        </div>
+
+        <div class="footnote">
+            Sputnik Studio v6.0.1 — открытое ПО, распространяется под лицензией MIT.<br>
+            Документация обновлена 22 марта 2026 г.
+        </div>
+    </div>
+</div>
+<div class="theme-switch" id="themeSwitch"><i class="fas fa-moon"></i></div>
+<div class="mobile-menu-toggle" id="mobileMenuToggle"><i class="fas fa-bars"></i></div>
+
+<script>
+    // ========== НАВИГАЦИЯ ПО ССЫЛКАМ ==========
+    const navItems = document.querySelectorAll('.nav-item');
+    const sections = document.querySelectorAll('.section');
+    function setActiveNav() {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionBottom = sectionTop + section.offsetHeight;
+            if (window.scrollY >= sectionTop - 100 && window.scrollY < sectionBottom - 50) {
+                current = section.getAttribute('id');
+            }
+        });
+        navItems.forEach(item => {
+            item.classList.remove('active');
+            if (item.dataset.section === current) {
+                item.classList.add('active');
+            }
+        });
+    }
+    window.addEventListener('scroll', setActiveNav);
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const sectionId = item.dataset.section;
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth' });
+                // Для мобильной версии закрываем сайдбар
+                if (window.innerWidth <= 768) {
+                    document.getElementById('sidebar').classList.remove('open');
+                }
+            }
+        });
+    });
+    setActiveNav();
+
+    // ========== СВОРАЧИВАНИЕ САЙДБАРА ==========
+    const sidebar = document.getElementById('sidebar');
+    const collapseBtn = document.getElementById('collapseSidebarBtn');
+    function setSidebarCollapsed(collapsed) {
+        if (collapsed) {
+            sidebar.classList.add('collapsed');
+            collapseBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+            localStorage.setItem('wikiSidebarCollapsed', 'true');
+        } else {
+            sidebar.classList.remove('collapsed');
+            collapseBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+            localStorage.setItem('wikiSidebarCollapsed', 'false');
+        }
+    }
+    collapseBtn.addEventListener('click', () => {
+        setSidebarCollapsed(!sidebar.classList.contains('collapsed'));
+    });
+    if (localStorage.getItem('wikiSidebarCollapsed') === 'true') {
+        setSidebarCollapsed(true);
+    }
+
+    // ========== ТЁМНАЯ ТЕМА ==========
+    const themeSwitch = document.getElementById('themeSwitch');
+    function setTheme(theme) {
+        if (theme === 'dark') {
+            document.body.classList.add('dark');
+            themeSwitch.innerHTML = '<i class="fas fa-sun"></i>';
+            localStorage.setItem('wikiTheme', 'dark');
+        } else {
+            document.body.classList.remove('dark');
+            themeSwitch.innerHTML = '<i class="fas fa-moon"></i>';
+            localStorage.setItem('wikiTheme', 'light');
+        }
+    }
+    themeSwitch.addEventListener('click', () => {
+        const isDark = document.body.classList.contains('dark');
+        setTheme(isDark ? 'light' : 'dark');
+    });
+    if (localStorage.getItem('wikiTheme') === 'dark') setTheme('dark');
+
+    // ========== МОБИЛЬНОЕ МЕНЮ ==========
+    const mobileToggle = document.getElementById('mobileMenuToggle');
+    mobileToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+    });
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== mobileToggle) {
+            sidebar.classList.remove('open');
+        }
+    });
+
+    // ========== ИНТЕРАКТИВНАЯ ДЕМОНСТРАЦИЯ КАРТОЧКИ ==========
+    const demoDevice = document.getElementById('demoDevice');
+    const demoCollapseBtn = document.getElementById('demoCollapseBtn');
+    const demoDeviceName = document.getElementById('demoDeviceName');
+    const demoUsb = document.getElementById('demoUsb');
+    const demoPoe = document.getElementById('demoPoe');
+    const demoEth = document.getElementById('demoEth');
+    const demoPower = document.getElementById('demoPower');
+
+    function updateDemoDevice() {
+        let details = [];
+        details.push('Зад: 5 мс');
+        if (demoUsb.checked) details.push(`USB ${demoUsb.checked ? '2.0' : 'нет'}`);
+        if (demoPoe.checked) details.push('PoE');
+        if (demoEth.checked) details.push('Ethernet');
+        const detailText = details.join(', ');
+        demoDevice.querySelector('.device-info').innerHTML = detailText;
+        demoDeviceName.innerHTML = `Типовой ПК #1${demoPoe.checked ? ' (PoE)' : ''}`;
+    }
+    demoCollapseBtn.addEventListener('click', () => {
+        const isExpanded = demoDevice.classList.contains('expanded');
+        if (isExpanded) {
+            demoDevice.classList.remove('expanded');
+            demoDevice.classList.add('collapsed');
+            demoCollapseBtn.innerHTML = '<i class="fas fa-expand"></i>';
+            demoDevice.querySelector('.demo-controls').style.display = 'none';
+            demoDevice.querySelector('.device-info').style.display = 'none';
+        } else {
+            demoDevice.classList.remove('collapsed');
+            demoDevice.classList.add('expanded');
+            demoCollapseBtn.innerHTML = '<i class="fas fa-compress"></i>';
+            demoDevice.querySelector('.demo-controls').style.display = 'flex';
+            demoDevice.querySelector('.device-info').style.display = 'block';
+        }
+    });
+    demoUsb.addEventListener('change', updateDemoDevice);
+    demoPoe.addEventListener('change', updateDemoDevice);
+    demoEth.addEventListener('change', updateDemoDevice);
+    demoPower.addEventListener('input', () => {
+        demoDeviceName.innerHTML = `Типовой ПК #1 (${demoPower.value} Вт)`;
+    });
+    updateDemoDevice();
+</script>
+</body>
+</html>
