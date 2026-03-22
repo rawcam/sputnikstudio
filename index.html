@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Sputnik Studio v6.0.3 — AV System Designer</title>
+    <title>Sputnik Studio v6.0.4 — AV System Designer</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* ========== СТИЛИ ========== */
+        /* ========== СТИЛИ (полностью из v6.0.3) ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         :root {
             --bg-page: #f4f7fb; --bg-panel: #ffffff; --text-primary: #1e2b3c; --text-secondary: #4a5a6e;
@@ -841,7 +841,7 @@
             </div>
         </div>
 
-        <div class="sidebar-footer">Sputnik Studio v6.0.3<br>© 2026</div>
+        <div class="sidebar-footer">Sputnik Studio v6.0.4<br>© 2026</div>
     </div>
 
     <div class="main-content">
@@ -2681,7 +2681,7 @@
     // ========== СОХРАНЕНИЕ / ЗАГРУЗКА ==========
     function saveToLocalStorage() {
         const projectData = {
-            version: '6.0.3',
+            version: '6.0.4',
             globalSettings, paths, projectSwitches, ledConfig, soundConfig, vcConfig,
             nextPathId, nextSwitchId, activePathId, viewMode
         };
@@ -2689,7 +2689,7 @@
         alert('Проект сохранён в браузере');
     }
     function exportToJson() {
-        const projectData = { version: '6.0.3', exportDate: new Date().toISOString(), globalSettings, paths, projectSwitches, ledConfig, soundConfig, vcConfig, nextPathId, nextSwitchId, activePathId, viewMode };
+        const projectData = { version: '6.0.4', exportDate: new Date().toISOString(), globalSettings, paths, projectSwitches, ledConfig, soundConfig, vcConfig, nextPathId, nextSwitchId, activePathId, viewMode };
         const json = JSON.stringify(projectData, null, 2);
         const fileName = `sputnik-studio_${exportCounter}.json`;
         exportCounter++;
@@ -2755,8 +2755,28 @@
         input.click();
     }
 
+    // ========== СБРОС ПРОЕКТА (исправлен) ==========
     function resetProject() {
         if (confirm('Сбросить все данные? Текущий проект будет удалён.')) {
+            // Сброс глобальных настроек видео и сети
+            globalSettings = {
+                resolution: '4K', chroma: '422', fps: 60, colorSpace: 'YCbCr', bitDepth: 10,
+                cable: 'Cat6', multicast: false, qos: false, networkType: 'managed', syncProtocol: 'ptp', redundancy: false
+            };
+            // Обновляем элементы управления видео
+            document.getElementById('resolutionSidebar').value = globalSettings.resolution;
+            document.getElementById('chromaSidebar').value = globalSettings.chroma;
+            document.getElementById('fpsSidebar').value = globalSettings.fps;
+            document.getElementById('colorSpace').value = globalSettings.colorSpace;
+            document.getElementById('bitDepth').value = globalSettings.bitDepth;
+            // Обновляем элементы управления сетью
+            document.getElementById('globalCable').value = globalSettings.cable;
+            document.getElementById('globalMulticast').checked = globalSettings.multicast;
+            document.getElementById('globalQoS').checked = globalSettings.qos;
+            document.getElementById('networkType').value = globalSettings.networkType;
+            document.getElementById('syncProtocol').value = globalSettings.syncProtocol;
+            document.getElementById('redundancy').checked = globalSettings.redundancy;
+            // Сброс остальных данных
             paths = [];
             projectSwitches = [];
             nextPathId = 1;
@@ -2778,7 +2798,7 @@
             vcConfig = {
                 activeMode: 'codec', codecPreset: 'trueconf', resolution: '1080p', fps: 30, participants: 2, multipointParticipants: 4
             };
-            for(let k in deviceCounters) deviceCounters[k] = 0;
+            for (let k in deviceCounters) deviceCounters[k] = 0;
             portManager.setSwitches(projectSwitches);
             addNewPath();
             calculateAll();
@@ -2835,7 +2855,7 @@
         document.getElementById('printReportBtnSidebar').addEventListener('click',()=>{
             let win = window.open('', '_blank');
             win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Технический отчёт Sputnik Studio</title><style>body{font-family:"Segoe UI",Arial,sans-serif;margin:20px;color:#1e2b3c}h1{color:#2563eb;border-bottom:2px solid #2563eb;padding-bottom:8px}h2{color:#1e2b3c;margin-top:24px;border-left:4px solid #2563eb;padding-left:12px}h3{color:#4a5a6e;margin-top:16px}table{border-collapse:collapse;width:100%;margin:16px 0}th,td{border:1px solid #d9e1ec;padding:8px 12px;text-align:left;vertical-align:top}th{background-color:#e2edff;font-weight:600}.summary-box{background:#f9fcff;border:1px solid #d9e1ec;border-radius:8px;padding:16px;margin:16px 0}.summary-grid{display:flex;flex-wrap:wrap;gap:20px}.summary-item{flex:1;min-width:200px}.footer{margin-top:40px;font-size:12px;color:#6c757d;text-align:center;border-top:1px solid #dee2e6;padding-top:16px}</style></head><body>');
-            win.document.write('<h1>Sputnik Studio v6.0.3 — Технический отчёт</h1>');
+            win.document.write('<h1>Sputnik Studio v6.0.4 — Технический отчёт</h1>');
             win.document.write('<p><strong>Дата формирования:</strong> ' + new Date().toLocaleString() + '</p>');
             win.document.write('<h2>1. Глобальные параметры проекта</h2><div class="summary-box"><div class="summary-grid">');
             win.document.write(`<div class="summary-item"><strong>Разрешение:</strong> ${globalSettings.resolution}</div>`);
@@ -2879,7 +2899,7 @@
                 });
                 const frames = delay / (1000 / getFps());
                 win.document.write(`<h3>${path.name} (задержка: ${delay.toFixed(2)} мс / ${frames.toFixed(2)} кадр.)</h3>`);
-                win.document.write('<table border="1" cellpadding="5" width="100%"><thead> <tr><th>Сегмент</th><th>Устройство</th><th>Тип</th><th>Задержка (мс)</th><th>Питание</th><th>Подключение</th><th>Примечания</th></tr></thead><tbody>');
+                win.document.write('<table border="1" cellpadding="5" width="100%"><thead>  </thead><tbody>');
                 [...path.sourceDevices, ...path.sinkDevices].forEach(dev => {
                     let segName = dev.segment === 'source' ? 'Начало тракта' : 'Конец тракта';
                     let devLatency = dev.latency || 0;
@@ -2908,7 +2928,7 @@
                 });
                 win.document.write('</tbody></table>');
             });
-            win.document.write('<div class="footer">Отчёт сгенерирован в Sputnik Studio v6.0.3.</div>');
+            win.document.write('<div class="footer">Отчёт сгенерирован в Sputnik Studio v6.0.4.</div>');
             win.document.write('</body></html>');
             win.document.close();
             win.print();
@@ -2975,6 +2995,27 @@
         modalCancelBtn.addEventListener('click', () => modal.style.display = 'none');
         window.addEventListener('click', e => { if(e.target === modal) modal.style.display = 'none'; });
     }
+
+    // Функция синхронизации настроек сети (добавлено обновление виджетов)
+    function syncNetworkSettings(){
+        globalSettings.cable = document.getElementById('globalCable').value;
+        globalSettings.multicast = document.getElementById('globalMulticast').checked;
+        globalSettings.qos = document.getElementById('globalQoS').checked;
+        globalSettings.networkType = document.getElementById('networkType').value;
+        globalSettings.syncProtocol = document.getElementById('syncProtocol').value;
+        globalSettings.redundancy = document.getElementById('redundancy').checked;
+        sidebarMulticastStatus.innerText = globalSettings.multicast ? 'Вкл' : 'Выкл';
+        sidebarQoSStatus.innerText = globalSettings.qos ? 'Вкл' : 'Выкл';
+        calculateAll();
+    }
+
+    // Переопределяем обработчики сети (убеждаемся, что они используют syncNetworkSettings)
+    document.getElementById('globalCable').addEventListener('change', syncNetworkSettings);
+    document.getElementById('globalMulticast').addEventListener('change', syncNetworkSettings);
+    document.getElementById('globalQoS').addEventListener('change', syncNetworkSettings);
+    document.getElementById('networkType').addEventListener('change', syncNetworkSettings);
+    document.getElementById('syncProtocol').addEventListener('change', syncNetworkSettings);
+    document.getElementById('redundancy').addEventListener('change', syncNetworkSettings);
 
     init();
 })();
