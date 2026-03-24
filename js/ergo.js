@@ -12,7 +12,7 @@ const ErgoModule = (function() {
                 if (dev.type === 'display' || dev.type === 'ledScreen') {
                     let w = 0, h = 0, rw = 0, rh = 0;
                     if (dev.type === 'display') {
-                        w = 1200; h = 700; rw = 1920; rh = 1080; // условные значения для дисплея
+                        w = 1200; h = 700; rw = 1920; rh = 1080;
                     } else if (dev.type === 'ledScreen') {
                         w = dev.width_m ? dev.width_m * 1000 : 0;
                         h = dev.height_m ? dev.height_m * 1000 : 0;
@@ -55,6 +55,9 @@ const ErgoModule = (function() {
 
         container.innerHTML = `
             <div class="ergo-calc">
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                    <button class="btn-secondary" id="closeErgoBtn"><i class="fas fa-times"></i> Закрыть калькулятор</button>
+                </div>
                 <div class="ergo-tabs" id="ergoTabs">
                     <div class="ergo-tab ${activeTab === 'distance' ? 'active' : ''}" data-tab="distance">Расчёт расстояния/высоты</div>
                     <div class="ergo-tab ${activeTab === 'zov' ? 'active' : ''}" data-tab="zov">Зона оптимальной видимости (ЗОВ)</div>
@@ -162,7 +165,7 @@ const ErgoModule = (function() {
         attachDistanceEventHandlers();
         attachZovEventHandlers();
 
-        // ========== ИСПРАВЛЕНИЕ: обработчики вкладок ==========
+        // ========== ОБРАБОТЧИКИ ВКЛАДОК ==========
         const tabs = container.querySelectorAll('.ergo-tab');
         const distanceTabDiv = container.querySelector('#distanceTab');
         const zovTabDiv = container.querySelector('#zovTab');
@@ -171,21 +174,55 @@ const ErgoModule = (function() {
             tab.addEventListener('click', () => {
                 const tabName = tab.dataset.tab;
                 if (!tabName) return;
-                // Обновить активный класс у вкладок
                 tabs.forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
-                // Показать/скрыть блоки
                 if (tabName === 'distance') {
                     distanceTabDiv.style.display = 'block';
                     zovTabDiv.style.display = 'none';
                 } else {
                     distanceTabDiv.style.display = 'none';
                     zovTabDiv.style.display = 'block';
-                    // При переключении на ЗОВ обновляем данные
                     updateZOV();
                 }
             });
         });
+
+        // ========== КНОПКА ЗАКРЫТИЯ ==========
+        const closeBtn = container.querySelector('#closeErgoBtn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                // Возвращаемся к предыдущему режиму (тракты)
+                const state = AppState.getState();
+                const lastViewMode = localStorage.getItem('lastViewMode') || 'single';
+                if (lastViewMode === 'single') {
+                    if (state.activePathId) {
+                        state.viewMode = 'single';
+                        AppState.setState(state);
+                    } else if (state.paths.length) {
+                        state.viewMode = 'single';
+                        state.activePathId = state.paths[0].id;
+                        AppState.setState(state);
+                    } else {
+                        // Создаём тракт, если их нет
+                        const newPath = { id: state.nextPathId++, name: `Тракт ${state.nextPathId - 1}`, sourceDevices: [], sinkDevices: [] };
+                        state.paths.push(newPath);
+                        state.activePathId = newPath.id;
+                        state.viewMode = 'single';
+                        AppState.setState(state);
+                    }
+                } else {
+                    state.viewMode = lastViewMode;
+                    AppState.setState(state);
+                }
+                // Восстанавливаем кнопку в сайдбаре
+                const ergoBtn = document.getElementById('showErgoCalcBtn');
+                if (ergoBtn) {
+                    ergoBtn.classList.remove('btn-inactive');
+                    ergoBtn.classList.add('btn-primary');
+                    ergoBtn.innerHTML = '<i class="fas fa-calculator"></i> Показать калькулятор';
+                }
+            });
+        }
 
         updateDistanceCalculations();
         updateZOV();
@@ -345,7 +382,6 @@ const ErgoModule = (function() {
             }
             const L_m = L_mm / 1000;
             document.getElementById('ergoDistanceResult').innerText = L_m.toFixed(2);
-            // Пиксели
             const screenHeight = parseFloat(document.getElementById('screenHeight')?.value) || 0;
             const screenResH = parseInt(document.getElementById('screenResH')?.value) || 0;
             if (screenHeight > 0 && screenResH > 0) {
@@ -446,6 +482,8 @@ const ErgoModule = (function() {
     function showErgoCalculator() {
         const state = AppState.getState();
         if (state.viewMode === 'ergo') return;
+        // Запоминаем текущий режим, чтобы потом вернуться
+        localStorage.setItem('lastViewMode', state.viewMode);
         state.viewMode = 'ergo';
         AppState.setState(state);
 
@@ -459,7 +497,7 @@ const ErgoModule = (function() {
 
         renderCalculator('distance');
 
-        // Изменение внешнего вида кнопки
+        // Изменяем внешний вид кнопки в сайдбаре
         const ergoBtn = document.getElementById('showErgoCalcBtn');
         if (ergoBtn) {
             ergoBtn.classList.remove('btn-primary');
@@ -471,11 +509,9 @@ const ErgoModule = (function() {
     function init() {
         unsubscribe = AppState.subscribe((newState) => {
             if (newState.viewMode === 'ergo') {
-                // Если уже отображаем эргономику, ничего не делаем, иначе перерисовываем
+                // Если переключились на эргономику извне, перерисовываем
                 const container = document.getElementById('ergoCalculatorContainer');
                 if (container && container.style.display !== 'none') {
-                    // Обновляем данные экранов, но не перерисовываем полностью, чтобы сохранить состояние
-                    // Для простоты перерисуем (это не сломает, но сбросит участников)
                     renderCalculator('distance');
                 }
             }
