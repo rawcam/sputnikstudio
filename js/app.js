@@ -1,17 +1,16 @@
 // app.js
 (function() {
-    // Инициализируем все модули (заглушки пока что)
+    // Инициализируем модули (заглушки пока что)
     Accordion.init();
     VideoModule.init();
     NetworkModule.init();
-    TractsModule.init();      // теперь есть
-    LedModule.init();         // заглушка
-    SoundModule.init();       // заглушка
-    VcModule.init();          // заглушка
-    ErgoModule.init();        // заглушка
-    StorageModule.init();     // заглушка
+    TractsModule.init();
+    LedModule.init();
+    SoundModule.init();
+    VcModule.init();
+    ErgoModule.init();
+    StorageModule.init();
 
-    // Тема, сворачивание сайдбара, мобильное меню
     function initTheme() {
         const themeSwitch = document.getElementById('themeSwitch');
         function setTheme(theme) {
