@@ -2,7 +2,7 @@
 const VideoModule = (function() {
     let unsubscribe = null;
     function init() {
-        console.log('TractsModule stub');
+        console.log('VideoModule stub');
         unsubscribe = AppState.subscribe(()=>{});
     }
     function destroy() {
