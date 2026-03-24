@@ -1,7 +1,8 @@
+// storage.js
 const StorageModule = (function() {
     let unsubscribe = null;
     function init() {
-        console.log('TractsModule stub');
+        console.log('StorageModule stub');
         unsubscribe = AppState.subscribe(()=>{});
     }
     function destroy() {
