@@ -251,53 +251,97 @@ const StorageModule = (function() {
     }
 
     function init() {
-        // Загрузка сохранённого проекта при старте, если есть
-        const savedProject = localStorage.getItem('sputnik_studio_project');
-        if (savedProject && confirm('Обнаружен сохранённый проект. Загрузить его?')) {
-            try {
-                const data = JSON.parse(savedProject);
-                AppState.setState({
-                    globalSettings: data.globalSettings,
-                    paths: data.paths,
-                    projectSwitches: data.projectSwitches,
-                    ledConfig: data.ledConfig,
-                    soundConfig: data.soundConfig,
-                    vcConfig: data.vcConfig,
-                    nextPathId: data.nextPathId,
-                    nextSwitchId: data.nextSwitchId,
-                    activePathId: data.activePathId,
-                    viewMode: data.viewMode || 'single'
-                });
-                // Обновляем DOM
-                const settings = data.globalSettings;
-                document.getElementById('resolutionSidebar').value = settings.resolution;
-                document.getElementById('chromaSidebar').value = settings.chroma;
-                document.getElementById('fpsSidebar').value = settings.fps;
-                document.getElementById('colorSpace').value = settings.colorSpace;
-                document.getElementById('bitDepth').value = settings.bitDepth;
-                document.getElementById('globalCable').value = settings.cable;
-                document.getElementById('globalMulticast').checked = settings.multicast;
-                document.getElementById('globalQoS').checked = settings.qos;
-                document.getElementById('networkType').value = settings.networkType;
-                document.getElementById('syncProtocol').value = settings.syncProtocol;
-                document.getElementById('redundancy').checked = settings.redundancy;
-                Utils.updateAllShortNames(AppState.getState());
-                alert('Проект загружен из браузера');
-            } catch(e) {
-                console.error(e);
-            }
-        } else {
-            // Если нет сохранённого, создаём дефолтный тракт
-            const state = AppState.getState();
-            if (state.paths.length === 0) {
-                const newPath = { id: state.nextPathId++, name: `Тракт ${state.nextPathId - 1}`, sourceDevices: [], sinkDevices: [] };
-                state.paths.push(newPath);
-                AppState.setState({ activePathId: newPath.id });
-            }
+    // Загрузка сохранённого проекта при старте, если есть
+    const savedProject = localStorage.getItem('sputnik_studio_project');
+    if (savedProject && confirm('Обнаружен сохранённый проект. Загрузить его?')) {
+        try {
+            const data = JSON.parse(savedProject);
+            AppState.setState({
+                globalSettings: data.globalSettings,
+                paths: data.paths,
+                projectSwitches: data.projectSwitches,
+                ledConfig: data.ledConfig,
+                soundConfig: data.soundConfig,
+                vcConfig: data.vcConfig,
+                nextPathId: data.nextPathId,
+                nextSwitchId: data.nextSwitchId,
+                activePathId: data.activePathId,
+                viewMode: data.viewMode || 'single'
+            });
+            // Обновляем DOM
+            const settings = data.globalSettings;
+            document.getElementById('resolutionSidebar').value = settings.resolution;
+            document.getElementById('chromaSidebar').value = settings.chroma;
+            document.getElementById('fpsSidebar').value = settings.fps;
+            document.getElementById('colorSpace').value = settings.colorSpace;
+            document.getElementById('bitDepth').value = settings.bitDepth;
+            document.getElementById('globalCable').value = settings.cable;
+            document.getElementById('globalMulticast').checked = settings.multicast;
+            document.getElementById('globalQoS').checked = settings.qos;
+            document.getElementById('networkType').value = settings.networkType;
+            document.getElementById('syncProtocol').value = settings.syncProtocol;
+            document.getElementById('redundancy').checked = settings.redundancy;
+            Utils.updateAllShortNames(AppState.getState());
+            alert('Проект загружен из браузера');
+        } catch(e) {
+            console.error(e);
         }
+    } else {
+        // Если нет сохранённого проекта, оставляем всё пустым (нет трактов)
+        // Состояние уже инициализировано в state.js с пустыми paths и нулевыми счётчиками
+        const state = AppState.getState();
+        // Убеждаемся, что нет активного тракта
+        if (state.activePathId !== null) {
+            AppState.setState({ activePathId: null });
+        }
+        // Отображаем пустое состояние
+        const container = document.getElementById('activePathContainer');
+        if (container) {
+            container.innerHTML = `<div class="empty-state"><i class="fas fa-road"></i><h3>Нет трактов</h3><p>Создайте новый тракт, чтобы начать работу</p><button class="btn-primary" id="emptyStateAddPath"><i class="fas fa-plus"></i> Новый тракт</button></div>`;
+            document.getElementById('emptyStateAddPath')?.addEventListener('click', () => {
+                if (typeof addNewPath === 'function') addNewPath();
+            });
+        }
+        // Обновляем статистику (будет 0)
+        calculateAll();
+    }
 
-        // Подписка на изменения (можно не делать, но оставим для совместимости)
-        unsubscribe = AppState.subscribe(() => {});
+    // Обработчики кнопок управления
+    document.getElementById('saveToBrowserBtn').addEventListener('click', saveToLocalStorage);
+    document.getElementById('exportJsonBtn').addEventListener('click', exportToJson);
+    document.getElementById('importJsonBtn').addEventListener('click', importFromJson);
+    document.getElementById('printReportBtnSidebar').addEventListener('click', printReport);
+    document.getElementById('resetProjectBtn').addEventListener('click', () => {
+        const resetModal = document.getElementById('resetModal');
+        if (resetModal) resetModal.style.display = 'flex';
+    });
+    document.getElementById('wikiBtnSidebar').addEventListener('click', () => {
+        window.open('wiki.html', '_blank');
+    });
+
+    // Модалка сброса
+    const resetModal = document.getElementById('resetModal');
+    const closeResetModal = document.getElementById('closeResetModal');
+    const cancelResetBtn = document.getElementById('cancelResetBtn');
+    const confirmResetBtn = document.getElementById('confirmResetBtn');
+    const saveBeforeResetBtn = document.getElementById('saveBeforeResetBtn');
+
+    if (closeResetModal) closeResetModal.addEventListener('click', () => resetModal.style.display = 'none');
+    if (cancelResetBtn) cancelResetBtn.addEventListener('click', () => resetModal.style.display = 'none');
+    if (confirmResetBtn) confirmResetBtn.addEventListener('click', () => {
+        resetModal.style.display = 'none';
+        resetProject();
+    });
+    if (saveBeforeResetBtn) saveBeforeResetBtn.addEventListener('click', () => {
+        saveToLocalStorage();
+        resetModal.style.display = 'none';
+        resetProject();
+    });
+    window.addEventListener('click', e => { if (e.target === resetModal) resetModal.style.display = 'none'; });
+
+    // Подписка на изменения (можно не делать, но оставим для совместимости)
+    unsubscribe = AppState.subscribe(() => {});
+}
 
         // Обработчики кнопок управления
         document.getElementById('saveToBrowserBtn').addEventListener('click', saveToLocalStorage);
