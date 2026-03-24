@@ -161,6 +161,32 @@ const ErgoModule = (function() {
 
         attachDistanceEventHandlers();
         attachZovEventHandlers();
+
+        // ========== ИСПРАВЛЕНИЕ: обработчики вкладок ==========
+        const tabs = container.querySelectorAll('.ergo-tab');
+        const distanceTabDiv = container.querySelector('#distanceTab');
+        const zovTabDiv = container.querySelector('#zovTab');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                if (!tabName) return;
+                // Обновить активный класс у вкладок
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                // Показать/скрыть блоки
+                if (tabName === 'distance') {
+                    distanceTabDiv.style.display = 'block';
+                    zovTabDiv.style.display = 'none';
+                } else {
+                    distanceTabDiv.style.display = 'none';
+                    zovTabDiv.style.display = 'block';
+                    // При переключении на ЗОВ обновляем данные
+                    updateZOV();
+                }
+            });
+        });
+
         updateDistanceCalculations();
         updateZOV();
     }
@@ -320,7 +346,6 @@ const ErgoModule = (function() {
             const L_m = L_mm / 1000;
             document.getElementById('ergoDistanceResult').innerText = L_m.toFixed(2);
             // Пиксели
-            const screenWidth = parseFloat(document.getElementById('screenWidth')?.value) || 0;
             const screenHeight = parseFloat(document.getElementById('screenHeight')?.value) || 0;
             const screenResH = parseInt(document.getElementById('screenResH')?.value) || 0;
             if (screenHeight > 0 && screenResH > 0) {
