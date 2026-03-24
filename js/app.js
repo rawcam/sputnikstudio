@@ -1,4 +1,5 @@
 // app.js
+console.log('app.js started');
 (function() {
     // Инициализируем модули (заглушки пока что)
     Accordion.init();
@@ -64,3 +65,4 @@
     initSidebarCollapse();
     initMobileMenu();
 })();
+console.log('app.js finished');
