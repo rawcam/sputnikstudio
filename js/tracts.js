@@ -3,9 +3,8 @@ const TractsModule = (function() {
     let unsubscribe = null;
     let currentModalCallback = null;
     let portManager = null;
-    let isUpdating = false; // флаг для предотвращения рекурсии
+    let isUpdating = false;
 
-    // Используем Utils для генерации имён
     function createDevice(type, modelIndex, pathId, segment) {
         const utils = Utils;
         let model;
@@ -598,21 +597,18 @@ const TractsModule = (function() {
     }
 
     function calculateAll() {
-        // Защита от рекурсии
         if (isUpdating) return;
         isUpdating = true;
         try {
             const state = AppState.getState();
             const settings = state.globalSettings;
 
-            // Сброс портов
             for (let sw of state.projectSwitches) {
                 if (sw.type === 'networkSwitch') {
                     for (let port of sw.ports) port.deviceId = null;
                 }
             }
 
-            // Подключение устройств
             let devicesToConnect = [];
             state.paths.forEach(path => {
                 devicesToConnect.push(...path.sourceDevices.filter(d => d.hasNetwork !== false));
@@ -638,7 +634,6 @@ const TractsModule = (function() {
                 }
             }
 
-            // Расчёт битрейта, мощности и пр.
             let totalBitrate = 0, totalPoEBudget = 0, usedPoE = 0, mainsPower = 0, totalPowerAll = 0;
             for (let sw of state.projectSwitches) {
                 totalPowerAll += sw.powerW || 0;
@@ -694,12 +689,6 @@ const TractsModule = (function() {
                 const activePath = state.paths.find(p => p.id === state.activePathId);
                 if (activePath) {
                     renderSinglePath(activePath);
-                } else if (state.paths.length) {
-                    if (state.activePathId === null) {
-                        AppState.setState({ activePathId: state.paths[0].id });
-                    } else {
-                        renderEmptyState();
-                    }
                 } else {
                     renderEmptyState();
                 }
@@ -786,8 +775,8 @@ const TractsModule = (function() {
     }
 
     function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
+        if (str == null) return '';
+        return String(str).replace(/[&<>]/g, function(m) {
             if (m === '&') return '&amp;';
             if (m === '<') return '&lt;';
             if (m === '>') return '&gt;';
@@ -795,6 +784,5 @@ const TractsModule = (function() {
         });
     }
 
-    // Экспортируем addNewPath и calculateAll для использования в других модулях
     return { init, destroy, addNewPath, calculateAll };
 })();
