@@ -63,7 +63,6 @@ const StorageModule = (function() {
                 try {
                     const data = JSON.parse(ev.target.result);
                     if (confirm('Загрузить проект из файла? Текущий проект будет заменён.')) {
-                        // Обновляем состояние
                         AppState.setState({
                             globalSettings: data.globalSettings,
                             paths: data.paths,
@@ -76,7 +75,6 @@ const StorageModule = (function() {
                             activePathId: data.activePathId,
                             viewMode: data.viewMode || 'single'
                         });
-                        // Обновляем DOM элементы видео/сети
                         const settings = data.globalSettings;
                         document.getElementById('resolutionSidebar').value = settings.resolution;
                         document.getElementById('chromaSidebar').value = settings.chroma;
@@ -91,10 +89,6 @@ const StorageModule = (function() {
                         document.getElementById('redundancy').checked = settings.redundancy;
 
                         Utils.updateAllShortNames(AppState.getState());
-                        // Обновляем интерфейс трактов
-                        if (typeof TractsModule !== 'undefined' && TractsModule.calculateAll) {
-                            TractsModule.calculateAll();
-                        }
                         alert('Проект загружен');
                     }
                 } catch(err) {
@@ -182,7 +176,6 @@ const StorageModule = (function() {
 
     function resetProject() {
         if (confirm('Сбросить все данные? Текущий проект будет удалён.')) {
-            // Сброс состояния к начальному (без трактов)
             const newState = {
                 globalSettings: {
                     resolution: '4K',
@@ -197,7 +190,7 @@ const StorageModule = (function() {
                     syncProtocol: 'ptp',
                     redundancy: false
                 },
-                paths: [],           // нет трактов
+                paths: [],
                 projectSwitches: [],
                 ledConfig: {
                     activeMode: 'cabinets',
@@ -236,7 +229,7 @@ const StorageModule = (function() {
                 viewMode: 'single'
             };
             AppState.setState(newState);
-            // Обновляем DOM элементы видео/сети
+            // Обновляем DOM
             document.getElementById('resolutionSidebar').value = newState.globalSettings.resolution;
             document.getElementById('chromaSidebar').value = newState.globalSettings.chroma;
             document.getElementById('fpsSidebar').value = newState.globalSettings.fps;
@@ -250,19 +243,11 @@ const StorageModule = (function() {
             document.getElementById('redundancy').checked = newState.globalSettings.redundancy;
 
             Utils.updateAllShortNames(newState);
-            // Перерисовываем интерфейс трактов (должно показать пустое состояние)
-            if (typeof TractsModule !== 'undefined' && TractsModule.calculateAll) {
-                TractsModule.calculateAll();
-            }
             alert('Проект сброшен');
         }
     }
 
     function init() {
-        // Подписка на изменения (можно оставить пустую)
-        unsubscribe = AppState.subscribe(() => {});
-
-        // Загрузка сохранённого проекта при старте, если есть
         const savedProject = localStorage.getItem('sputnik_studio_project');
         if (savedProject && confirm('Обнаружен сохранённый проект. Загрузить его?')) {
             try {
@@ -279,7 +264,6 @@ const StorageModule = (function() {
                     activePathId: data.activePathId,
                     viewMode: data.viewMode || 'single'
                 });
-                // Обновляем DOM элементы
                 const settings = data.globalSettings;
                 document.getElementById('resolutionSidebar').value = settings.resolution;
                 document.getElementById('chromaSidebar').value = settings.chroma;
@@ -292,26 +276,23 @@ const StorageModule = (function() {
                 document.getElementById('networkType').value = settings.networkType;
                 document.getElementById('syncProtocol').value = settings.syncProtocol;
                 document.getElementById('redundancy').checked = settings.redundancy;
-
                 Utils.updateAllShortNames(AppState.getState());
-                // Перерисовываем тракты
-                if (typeof TractsModule !== 'undefined' && TractsModule.calculateAll) {
-                    TractsModule.calculateAll();
-                }
                 alert('Проект загружен из браузера');
             } catch(e) {
                 console.error(e);
-                // Если ошибка, показываем пустое состояние
-                if (typeof TractsModule !== 'undefined' && TractsModule.calculateAll) {
-                    TractsModule.calculateAll();
-                }
             }
         } else {
-            // Нет сохранённого проекта – показываем пустое состояние
-            if (typeof TractsModule !== 'undefined' && TractsModule.calculateAll) {
-                TractsModule.calculateAll();
+            // Если нет сохранённого проекта, состояние уже пустое (paths: [], activePathId: null)
+            // Ничего не создаём. Пустой экран с кнопкой "Новый тракт".
+            const state = AppState.getState();
+            if (state.paths.length === 0) {
+                // Просто убеждаемся, что viewMode = single, activePathId = null
+                if (state.viewMode !== 'single') AppState.setState({ viewMode: 'single' });
+                if (state.activePathId !== null) AppState.setState({ activePathId: null });
             }
         }
+
+        unsubscribe = AppState.subscribe(() => {});
 
         // Обработчики кнопок управления
         document.getElementById('saveToBrowserBtn').addEventListener('click', saveToLocalStorage);
