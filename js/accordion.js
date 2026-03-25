@@ -31,7 +31,14 @@ const Accordion = (function() {
             const content = document.getElementById(`${sectionId}Content`);
             if (!header || !content) return;
 
-            const isCollapsed = localStorage.getItem(`section_${sectionId}_collapsed`) === 'true';
+            // По умолчанию все секции закрыты, если нет сохранённого состояния
+            let isCollapsed = localStorage.getItem(`section_${sectionId}_collapsed`);
+            if (isCollapsed === null) {
+                isCollapsed = true; // закрыто по умолчанию
+            } else {
+                isCollapsed = (isCollapsed === 'true');
+            }
+
             if (isCollapsed) {
                 content.classList.add('collapsed');
                 header.classList.add('collapsed');
