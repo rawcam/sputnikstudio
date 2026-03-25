@@ -336,7 +336,7 @@ body {
     background: var(--bg-panel);
     border: 1px solid var(--border-light);
     border-radius: 12px;
-    padding: 6px 10px;  /* уменьшено с 8px 12px */
+    padding: 6px 10px;
     font-size: 0.85rem;
     color: var(--text-primary);
     font-family: inherit;
@@ -478,7 +478,7 @@ body {
 }
 
 .calc-card .result-value {
-    font-size: 1.3rem;  /* чуть уменьшен с 1.5rem */
+    font-size: 1.3rem;
     font-weight: 700;
     color: var(--accent);
     line-height: 1.2;
@@ -499,8 +499,9 @@ body {
     line-height: 1.4;
 }
 
-/* Специально для текстовых рекомендаций в ВКС */
-#vcNetworkReq {
+/* ========== СПЕЦИАЛЬНЫЕ ПРАВКИ ДЛЯ ВКС ========== */
+#vcNetworkReq,
+#mpChannel {
     font-size: 0.85rem;
     font-weight: normal;
     color: var(--text-secondary);
@@ -517,7 +518,7 @@ body {
 .ergo-tab {
     padding: 6px 16px;
     cursor: pointer;
-    border-radius: 16px 16px 0 0; /* уменьшено с 30px */
+    border-radius: 16px 16px 0 0;
     background: var(--card-bg);
     color: var(--text-primary);
 }
@@ -527,8 +528,27 @@ body {
     color: white;
 }
 
+/* Приводим select в эргономике к общему стилю */
+.screen-selector select {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    font-family: inherit;
+    width: 100%;
+    transition: 0.2s;
+}
+
+.screen-selector select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
 .participant-coords input {
-    border-radius: 12px; /* явно задаём скругление */
+    border-radius: 12px;
 }
 
 /* ========== ОСТАЛЬНЫЕ ЭЛЕМЕНТЫ (тракты, модалки и т.д.) ========== */
