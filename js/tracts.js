@@ -299,7 +299,6 @@ const TractsModule = (function() {
                 if (updated) {
                     Utils.updateAllShortNames(state);
                     AppState.setState(state);
-                    calculateAll();
                 }
             });
         });
@@ -353,7 +352,6 @@ const TractsModule = (function() {
                 if (updated) {
                     Utils.updateAllShortNames(state);
                     AppState.setState(state);
-                    calculateAll();
                 }
             });
         });
@@ -371,7 +369,7 @@ const TractsModule = (function() {
                 if (!device) device = state.projectSwitches.find(d => d.id == deviceId);
                 if (device) {
                     device.expanded = !device.expanded;
-                    calculateAll();
+                    AppState.setState(state);
                 }
             });
         });
@@ -391,7 +389,6 @@ const TractsModule = (function() {
                     device.poeEnabled = cb.checked;
                     if (device.poeEnabled) device.ethernet = false;
                     AppState.setState(state);
-                    calculateAll();
                 }
             });
         });
@@ -411,7 +408,6 @@ const TractsModule = (function() {
                     device.ethernet = cb.checked;
                     if (device.ethernet && device.poeEnabled) device.poeEnabled = false;
                     AppState.setState(state);
-                    calculateAll();
                 }
             });
         });
@@ -424,10 +420,10 @@ const TractsModule = (function() {
                 const state = AppState.getState();
                 for (let path of state.paths) {
                     let dev = [...path.sourceDevices, ...path.sinkDevices].find(d => d.id == deviceId);
-                    if (dev && dev.poe === true) { dev.poePower = power; dev.powerW = power; AppState.setState(state); calculateAll(); return; }
+                    if (dev && dev.poe === true) { dev.poePower = power; dev.powerW = power; AppState.setState(state); return; }
                 }
                 let sw = state.projectSwitches.find(d => d.id == deviceId);
-                if (sw && sw.poe === true) { sw.poePower = power; sw.powerW = power; AppState.setState(state); calculateAll(); return; }
+                if (sw && sw.poe === true) { sw.poePower = power; sw.powerW = power; AppState.setState(state); return; }
             });
         });
 
@@ -439,10 +435,10 @@ const TractsModule = (function() {
                 const state = AppState.getState();
                 for (let path of state.paths) {
                     let dev = [...path.sourceDevices, ...path.sinkDevices].find(d => d.id == deviceId);
-                    if (dev) { dev.powerW = power; AppState.setState(state); calculateAll(); return; }
+                    if (dev) { dev.powerW = power; AppState.setState(state); return; }
                 }
                 let sw = state.projectSwitches.find(d => d.id == deviceId);
-                if (sw) { sw.powerW = power; AppState.setState(state); calculateAll(); return; }
+                if (sw) { sw.powerW = power; AppState.setState(state); return; }
             });
         });
 
@@ -453,7 +449,7 @@ const TractsModule = (function() {
                 const state = AppState.getState();
                 for (let path of state.paths) {
                     let dev = [...path.sourceDevices, ...path.sinkDevices].find(d => d.id == deviceId);
-                    if (dev && (dev.type === 'tx' || dev.type === 'rx')) { dev.usb = cb.checked; AppState.setState(state); calculateAll(); return; }
+                    if (dev && (dev.type === 'tx' || dev.type === 'rx')) { dev.usb = cb.checked; AppState.setState(state); return; }
                 }
             });
         });
@@ -465,7 +461,7 @@ const TractsModule = (function() {
                 const state = AppState.getState();
                 for (let path of state.paths) {
                     let dev = [...path.sourceDevices, ...path.sinkDevices].find(d => d.id == deviceId);
-                    if (dev) { dev.usbVersion = sel.value; AppState.setState(state); calculateAll(); return; }
+                    if (dev) { dev.usbVersion = sel.value; AppState.setState(state); return; }
                 }
             });
         });
@@ -477,7 +473,7 @@ const TractsModule = (function() {
                 let val = parseInt(inp.value) || 1;
                 const state = AppState.getState();
                 let sw = state.projectSwitches.find(d => d.id == deviceId);
-                if (sw && sw.type === 'matrix') { sw.inputs = val; AppState.setState(state); calculateAll(); }
+                if (sw && sw.type === 'matrix') { sw.inputs = val; AppState.setState(state); }
             });
         });
 
@@ -488,7 +484,7 @@ const TractsModule = (function() {
                 let val = parseInt(inp.value) || 1;
                 const state = AppState.getState();
                 let sw = state.projectSwitches.find(d => d.id == deviceId);
-                if (sw && sw.type === 'matrix') { sw.outputs = val; AppState.setState(state); calculateAll(); }
+                if (sw && sw.type === 'matrix') { sw.outputs = val; AppState.setState(state); }
             });
         });
     }
@@ -508,7 +504,6 @@ const TractsModule = (function() {
         state.paths.push(newPath);
         AppState.setState(state);
         setActivePath(newPath.id);
-        calculateAll();
     }
 
     function setActivePath(id) {
@@ -517,26 +512,12 @@ const TractsModule = (function() {
         state.activePathId = id;
         state.viewMode = 'single';
         AppState.setState(state);
-        document.getElementById('activePathContainer').style.display = '';
-        document.getElementById('allTractsContainer').style.display = 'none';
-        document.getElementById('ergoCalculatorContainer').style.display = 'none';
-        document.getElementById('soundCalculatorContainer').style.display = 'none';
-        document.getElementById('ledCalculatorContainer').style.display = 'none';
-        document.getElementById('vcCalculatorContainer').style.display = 'none';
-        calculateAll();
     }
 
     function showAllTracts() {
         const state = AppState.getState();
         state.viewMode = 'all';
         AppState.setState(state);
-        document.getElementById('activePathContainer').style.display = 'none';
-        document.getElementById('allTractsContainer').style.display = '';
-        document.getElementById('ergoCalculatorContainer').style.display = 'none';
-        document.getElementById('soundCalculatorContainer').style.display = 'none';
-        document.getElementById('ledCalculatorContainer').style.display = 'none';
-        document.getElementById('vcCalculatorContainer').style.display = 'none';
-        renderAllTracts();
     }
 
     function renderEmptyState() {
@@ -571,9 +552,6 @@ const TractsModule = (function() {
                     if (newName && newName.trim()) {
                         path.name = newName.trim();
                         AppState.setState(state);
-                        renderPathsList();
-                        if (state.activePathId === path.id) renderSinglePath(path);
-                        calculateAll();
                     }
                 }
             });
@@ -590,7 +568,6 @@ const TractsModule = (function() {
                         else setActivePath(null);
                     }
                     AppState.setState(state);
-                    calculateAll();
                 }
             });
         });
@@ -603,12 +580,14 @@ const TractsModule = (function() {
             const state = AppState.getState();
             const settings = state.globalSettings;
 
+            // Сброс портов
             for (let sw of state.projectSwitches) {
                 if (sw.type === 'networkSwitch') {
                     for (let port of sw.ports) port.deviceId = null;
                 }
             }
 
+            // Подключение устройств
             let devicesToConnect = [];
             state.paths.forEach(path => {
                 devicesToConnect.push(...path.sourceDevices.filter(d => d.hasNetwork !== false));
@@ -634,6 +613,7 @@ const TractsModule = (function() {
                 }
             }
 
+            // Расчёт битрейта, мощности и пр.
             let totalBitrate = 0, totalPoEBudget = 0, usedPoE = 0, mainsPower = 0, totalPowerAll = 0;
             for (let sw of state.projectSwitches) {
                 totalPowerAll += sw.powerW || 0;
@@ -685,6 +665,7 @@ const TractsModule = (function() {
             document.getElementById('sidebarMulticastStatus').innerText = settings.multicast ? 'Вкл' : 'Выкл';
             document.getElementById('sidebarQoSStatus').innerText = settings.qos ? 'Вкл' : 'Выкл';
 
+            // Отображение в зависимости от viewMode
             if (state.viewMode === 'single') {
                 const activePath = state.paths.find(p => p.id === state.activePathId);
                 if (activePath) {
@@ -694,6 +675,10 @@ const TractsModule = (function() {
                 }
             } else if (state.viewMode === 'all') {
                 renderAllTracts();
+            } else if (state.viewMode === 'led' || state.viewMode === 'sound' || state.viewMode === 'vc' || state.viewMode === 'ergo') {
+                // Другие модули управляют своим отображением, здесь ничего не делаем
+            } else {
+                renderEmptyState();
             }
             renderPathsList();
         } finally {
@@ -731,7 +716,6 @@ const TractsModule = (function() {
                         state.projectSwitches.push(newMatrix);
                         Utils.updateAllShortNames(state);
                         AppState.setState(state);
-                        calculateAll();
                     }
                 } else if (type === 'networkSwitch') {
                     let newSwitch = createSwitch(type, modelIndex);
@@ -739,7 +723,6 @@ const TractsModule = (function() {
                         state.projectSwitches.push(newSwitch);
                         Utils.updateAllShortNames(state);
                         AppState.setState(state);
-                        calculateAll();
                     }
                 }
             } else {
@@ -751,7 +734,6 @@ const TractsModule = (function() {
                     else if (currentModalCallback.segment === 'sink') path.sinkDevices.push(newDev);
                     Utils.updateAllShortNames(state);
                     AppState.setState(state);
-                    calculateAll();
                 }
             }
             modal.style.display = 'none';
@@ -784,5 +766,5 @@ const TractsModule = (function() {
         });
     }
 
-    return { init, destroy, addNewPath, calculateAll };
+    return { init, destroy };
 })();
