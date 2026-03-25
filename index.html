@@ -161,6 +161,17 @@
                 <div class="widget-item"><span class="widget-label"><i class="fas fa-thermometer-half"></i><span> Тепло:</span></span><span class="widget-value" id="sidebarTotalBTU">0</span> BTU/ч</div></div>
             </div>
         </div>
+        <!-- ЭНЕРГИЯ (ИБП и кондиционер) -->
+<div class="sidebar-section" id="powerSection">
+    <div class="section-header" data-section="power">
+        <i class="fas fa-bolt"></i>
+        <span>ЭНЕРГИЯ</span>
+        <i class="fas fa-angle-down"></i>
+    </div>
+    <div class="section-content" id="powerContent">
+        <button class="btn-primary" id="showPowerCalcBtn"><i class="fas fa-calculator"></i> Калькулятор питания</button>
+    </div>
+</div>
 
         <!-- УПРАВЛЕНИЕ -->
         <div class="sidebar-section" id="manageSection">
@@ -191,6 +202,7 @@
         <div id="soundCalculatorContainer" style="display: none;"></div>
         <div id="ledCalculatorContainer" style="display: none;"></div>
         <div id="vcCalculatorContainer" style="display: none;"></div>
+        <div id="powerCalculatorContainer" style="display: none;"></div>
     </div>
 </div>
 <button class="mobile-menu-toggle" id="mobileMenuToggle"><i class="fas fa-bars"></i></button>
@@ -231,6 +243,7 @@
 <script src="js/ergo.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/logger.js"></script>
-<script src="js/app.js"></script>
+<script src="js/power.js"></script>
+<script src="js/app.js"></script>    
 </body>
 </html>
