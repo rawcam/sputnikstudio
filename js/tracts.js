@@ -3,7 +3,9 @@ const TractsModule = (function() {
     let unsubscribe = null;
     let currentModalCallback = null;
     let portManager = null;
+    let isUpdating = false; // флаг для предотвращения рекурсии
 
+    // Используем Utils для генерации имён
     function createDevice(type, modelIndex, pathId, segment) {
         const utils = Utils;
         let model;
@@ -596,112 +598,118 @@ const TractsModule = (function() {
     }
 
     function calculateAll() {
-        const state = AppState.getState();
-        const settings = state.globalSettings;
+        // Защита от рекурсии
+        if (isUpdating) return;
+        isUpdating = true;
+        try {
+            const state = AppState.getState();
+            const settings = state.globalSettings;
 
-        // Сброс портов
-        for (let sw of state.projectSwitches) {
-            if (sw.type === 'networkSwitch') {
-                for (let port of sw.ports) port.deviceId = null;
-            }
-        }
-
-        // Подключение устройств
-        let devicesToConnect = [];
-        state.paths.forEach(path => {
-            devicesToConnect.push(...path.sourceDevices.filter(d => d.hasNetwork !== false));
-            devicesToConnect.push(...path.sinkDevices.filter(d => d.hasNetwork !== false));
-        });
-        devicesToConnect.push(...state.projectSwitches.filter(s => s.type === 'matrix' && s.hasNetwork !== false));
-        for (let dev of devicesToConnect) {
-            const needConnect = dev.poeEnabled || dev.ethernet;
-            dev.attachedSwitchId = null;
-            dev.attachedPortNumber = null;
-            if (needConnect) {
-                const requirePoE = dev.poeEnabled === true;
-                const result = portManager.findAvailableSwitch(dev, requirePoE);
-                if (!result) {
-                    console.warn(`Не удалось подключить устройство ${dev.name}: нет свободных портов${requirePoE ? ' / PoE' : ''}`);
-                } else {
-                    const { sw, portNumber } = result;
-                    const port = sw.ports.find(p => p.number === portNumber);
-                    if (port) port.deviceId = dev.id;
-                    dev.attachedSwitchId = sw.id;
-                    dev.attachedPortNumber = portNumber;
+            // Сброс портов
+            for (let sw of state.projectSwitches) {
+                if (sw.type === 'networkSwitch') {
+                    for (let port of sw.ports) port.deviceId = null;
                 }
             }
-        }
 
-        // Расчёт битрейта, мощности и пр.
-        let totalBitrate = 0, totalPoEBudget = 0, usedPoE = 0, mainsPower = 0, totalPowerAll = 0;
-        for (let sw of state.projectSwitches) {
-            totalPowerAll += sw.powerW || 0;
-            mainsPower += sw.powerW || 0;
-            if (sw.type === 'networkSwitch' && sw.poeBudget) totalPoEBudget += sw.poeBudget;
-        }
-        state.paths.forEach(path => {
-            path.sourceDevices.forEach(dev => {
-                if (dev.type === 'source' || dev.type === 'tx') {
-                    let bitrate = Utils.calcVideoBitrate(settings);
-                    if (dev.type === 'tx') bitrate *= (dev.bitrateFactor || 0.8);
-                    totalBitrate += bitrate * (dev.bitrateFactor || 1);
-                }
-                let power = dev.powerW || 0;
-                totalPowerAll += power;
-                if (dev.poe === true && dev.poeEnabled) usedPoE += dev.poePower || 0;
-                else mainsPower += power;
+            // Подключение устройств
+            let devicesToConnect = [];
+            state.paths.forEach(path => {
+                devicesToConnect.push(...path.sourceDevices.filter(d => d.hasNetwork !== false));
+                devicesToConnect.push(...path.sinkDevices.filter(d => d.hasNetwork !== false));
             });
-            path.sinkDevices.forEach(dev => {
-                if (dev.type === 'rx') {
-                    let bitrate = Utils.calcVideoBitrate(settings);
-                    if (dev.usb) { const usbSpeeds = { '2.0': 480, '3.0': 5000, '3.1': 10000 }; bitrate += usbSpeeds[dev.usbVersion] || 0; }
-                    totalBitrate += bitrate * (dev.bitrateFactor || 1);
+            devicesToConnect.push(...state.projectSwitches.filter(s => s.type === 'matrix' && s.hasNetwork !== false));
+            for (let dev of devicesToConnect) {
+                const needConnect = dev.poeEnabled || dev.ethernet;
+                dev.attachedSwitchId = null;
+                dev.attachedPortNumber = null;
+                if (needConnect) {
+                    const requirePoE = dev.poeEnabled === true;
+                    const result = portManager.findAvailableSwitch(dev, requirePoE);
+                    if (!result) {
+                        console.warn(`Не удалось подключить устройство ${dev.name}: нет свободных портов${requirePoE ? ' / PoE' : ''}`);
+                    } else {
+                        const { sw, portNumber } = result;
+                        const port = sw.ports.find(p => p.number === portNumber);
+                        if (port) port.deviceId = dev.id;
+                        dev.attachedSwitchId = sw.id;
+                        dev.attachedPortNumber = portNumber;
+                    }
                 }
-                let power = dev.powerW || 0;
-                totalPowerAll += power;
-                if (dev.poe === true && dev.poeEnabled) usedPoE += dev.poePower || 0;
-                else mainsPower += power;
+            }
+
+            // Расчёт битрейта, мощности и пр.
+            let totalBitrate = 0, totalPoEBudget = 0, usedPoE = 0, mainsPower = 0, totalPowerAll = 0;
+            for (let sw of state.projectSwitches) {
+                totalPowerAll += sw.powerW || 0;
+                mainsPower += sw.powerW || 0;
+                if (sw.type === 'networkSwitch' && sw.poeBudget) totalPoEBudget += sw.poeBudget;
+            }
+            state.paths.forEach(path => {
+                path.sourceDevices.forEach(dev => {
+                    if (dev.type === 'source' || dev.type === 'tx') {
+                        let bitrate = Utils.calcVideoBitrate(settings);
+                        if (dev.type === 'tx') bitrate *= (dev.bitrateFactor || 0.8);
+                        totalBitrate += bitrate * (dev.bitrateFactor || 1);
+                    }
+                    let power = dev.powerW || 0;
+                    totalPowerAll += power;
+                    if (dev.poe === true && dev.poeEnabled) usedPoE += dev.poePower || 0;
+                    else mainsPower += power;
+                });
+                path.sinkDevices.forEach(dev => {
+                    if (dev.type === 'rx') {
+                        let bitrate = Utils.calcVideoBitrate(settings);
+                        if (dev.usb) { const usbSpeeds = { '2.0': 480, '3.0': 5000, '3.1': 10000 }; bitrate += usbSpeeds[dev.usbVersion] || 0; }
+                        totalBitrate += bitrate * (dev.bitrateFactor || 1);
+                    }
+                    let power = dev.powerW || 0;
+                    totalPowerAll += power;
+                    if (dev.poe === true && dev.poeEnabled) usedPoE += dev.poePower || 0;
+                    else mainsPower += power;
+                });
             });
-        });
-        if (state.ledConfig.area > 0 && state.ledConfig.power > 0) {
-            totalPowerAll += state.ledConfig.power;
-            mainsPower += state.ledConfig.power;
-        }
+            if (state.ledConfig.area > 0 && state.ledConfig.power > 0) {
+                totalPowerAll += state.ledConfig.power;
+                mainsPower += state.ledConfig.power;
+            }
 
-        let minBackplane = state.projectSwitches.length ? Math.min(...state.projectSwitches.map(s => s.backplane || 100)) * 1000 : 1000;
-        let loadPercent = (totalBitrate / minBackplane) * 100;
-        if (loadPercent > 100) loadPercent = 100;
+            let minBackplane = state.projectSwitches.length ? Math.min(...state.projectSwitches.map(s => s.backplane || 100)) * 1000 : 1000;
+            let loadPercent = (totalBitrate / minBackplane) * 100;
+            if (loadPercent > 100) loadPercent = 100;
 
-        document.getElementById('sidebarTotalBitrate').innerText = totalBitrate.toFixed(0);
-        document.getElementById('sidebarLoadPercent').innerText = loadPercent.toFixed(1) + '%';
-        const stats = portManager.getStats();
-        document.getElementById('sidebarPortsUsed').innerText = stats.usedPorts;
-        document.getElementById('sidebarPortsTotal').innerText = stats.totalPorts;
-        document.getElementById('sidebarPoEUsed').innerText = usedPoE;
-        document.getElementById('sidebarPoETotal').innerText = totalPoEBudget;
-        document.getElementById('sidebarTotalPower').innerText = totalPowerAll.toFixed(0);
-        document.getElementById('sidebarTotalBTU').innerText = (totalPowerAll * 3.412).toFixed(0);
-        document.getElementById('sidebarMulticastStatus').innerText = settings.multicast ? 'Вкл' : 'Выкл';
-        document.getElementById('sidebarQoSStatus').innerText = settings.qos ? 'Вкл' : 'Выкл';
+            document.getElementById('sidebarTotalBitrate').innerText = totalBitrate.toFixed(0);
+            document.getElementById('sidebarLoadPercent').innerText = loadPercent.toFixed(1) + '%';
+            const stats = portManager.getStats();
+            document.getElementById('sidebarPortsUsed').innerText = stats.usedPorts;
+            document.getElementById('sidebarPortsTotal').innerText = stats.totalPorts;
+            document.getElementById('sidebarPoEUsed').innerText = usedPoE;
+            document.getElementById('sidebarPoETotal').innerText = totalPoEBudget;
+            document.getElementById('sidebarTotalPower').innerText = totalPowerAll.toFixed(0);
+            document.getElementById('sidebarTotalBTU').innerText = (totalPowerAll * 3.412).toFixed(0);
+            document.getElementById('sidebarMulticastStatus').innerText = settings.multicast ? 'Вкл' : 'Выкл';
+            document.getElementById('sidebarQoSStatus').innerText = settings.qos ? 'Вкл' : 'Выкл';
 
-        // Обновление отображения в зависимости от viewMode
-        if (state.viewMode === 'single') {
-            const activePath = state.paths.find(p => p.id === state.activePathId);
-            if (activePath) {
-                renderSinglePath(activePath);
-            } else if (state.paths.length) {
-                if (state.activePathId === null) {
-                    setActivePath(state.paths[0].id);
+            if (state.viewMode === 'single') {
+                const activePath = state.paths.find(p => p.id === state.activePathId);
+                if (activePath) {
+                    renderSinglePath(activePath);
+                } else if (state.paths.length) {
+                    if (state.activePathId === null) {
+                        AppState.setState({ activePathId: state.paths[0].id });
+                    } else {
+                        renderEmptyState();
+                    }
                 } else {
                     renderEmptyState();
                 }
-            } else {
-                renderEmptyState();
+            } else if (state.viewMode === 'all') {
+                renderAllTracts();
             }
-        } else if (state.viewMode === 'all') {
-            renderAllTracts();
+            renderPathsList();
+        } finally {
+            isUpdating = false;
         }
-        renderPathsList();
     }
 
     function init() {
@@ -787,5 +795,6 @@ const TractsModule = (function() {
         });
     }
 
+    // Экспортируем addNewPath и calculateAll для использования в других модулях
     return { init, destroy, addNewPath, calculateAll };
 })();
