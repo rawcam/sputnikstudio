@@ -1,10 +1,11 @@
-// tracts.js – стабильная версия (calculateAll не вызывает setState)
+// tracts.js – финальная стабильная версия
 const TractsModule = (function() {
     let unsubscribe = null;
     let currentModalCallback = null;
     let portManager = null;
     let isUpdating = false;
 
+    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (без изменений) ==========
     function createDevice(type, modelIndex, pathId, segment) {
         const utils = Utils;
         let model;
@@ -512,12 +513,21 @@ const TractsModule = (function() {
         state.activePathId = id;
         state.viewMode = 'single';
         AppState.setState(state);
+        // Скрываем контейнер всех трактов, показываем контейнер активного
+        document.getElementById('allTractsContainer').style.display = 'none';
+        document.getElementById('activePathContainer').style.display = '';
+        calculateAll(); // перерисовка
     }
 
     function showAllTracts() {
         const state = AppState.getState();
+        if (state.viewMode === 'all') return;
         state.viewMode = 'all';
         AppState.setState(state);
+        // Скрываем контейнер активного тракта, показываем контейнер всех трактов
+        document.getElementById('activePathContainer').style.display = 'none';
+        document.getElementById('allTractsContainer').style.display = '';
+        calculateAll(); // перерисовка
     }
 
     function renderEmptyState() {
@@ -675,9 +685,9 @@ const TractsModule = (function() {
                 }
             } else if (state.viewMode === 'all') {
                 renderAllTracts();
-            } else {
-                // Другие модули управляют своим отображением
             }
+            // Для других режимов (led, sound, vc, ergo) рендеринг выполняется их собственными модулями
+
             renderPathsList();
         } finally {
             isUpdating = false;
