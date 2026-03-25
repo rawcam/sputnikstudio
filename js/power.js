@@ -1,8 +1,9 @@
-// power.js – расширенная версия
+// power.js – расширенная версия с кнопкой закрытия
 const PowerModule = (function() {
     let unsubscribe = null;
+    let previousViewMode = 'single';
 
-    // Константы
+    // Стандартные мощности кондиционеров в BTU/ч
     const AC_BTU_OPTIONS = [9000, 12000, 18000, 24000, 30000, 36000, 48000, 60000];
     const AC_BTU_TO_W = 0.293; // 1 BTU/ч ≈ 0.293 Вт
     const DEFAULT_UPS_EFFICIENCY = { online: 0.92, line_interactive: 0.95 };
@@ -97,6 +98,9 @@ const PowerModule = (function() {
 
         container.innerHTML = `
             <div class="calc-card">
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                    <button class="btn-secondary" id="closePowerBtn"><i class="fas fa-times"></i> Закрыть калькулятор</button>
+                </div>
                 <h3><i class="fas fa-battery-full"></i> Подбор ИБП</h3>
                 <div class="setting">
                     <label>Время резервирования (часы):</label>
@@ -192,7 +196,13 @@ const PowerModule = (function() {
             </div>
         `;
 
-        // Обработчики событий для ИБП
+        // Обработчик закрытия
+        const closeBtn = document.getElementById('closePowerBtn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closePowerCalculator);
+        }
+
+        // Обработчики для ИБП
         const backupInput = document.getElementById('backupHoursInput');
         if (backupInput) backupInput.addEventListener('change', () => {
             localStorage.setItem('power_backup_hours', parseFloat(backupInput.value) || 1);
@@ -244,6 +254,68 @@ const PowerModule = (function() {
         });
     }
 
+    function closePowerCalculator() {
+        const state = AppState.getState();
+        // Возвращаем предыдущий режим, который был до открытия калькулятора питания
+        const lastMode = previousViewMode;
+        if (lastMode === 'single') {
+            const activePath = state.paths.find(p => p.id === state.activePathId);
+            if (activePath) {
+                state.viewMode = 'single';
+                AppState.setState(state);
+            } else if (state.paths.length) {
+                state.viewMode = 'single';
+                state.activePathId = state.paths[0].id;
+                AppState.setState(state);
+            } else {
+                state.viewMode = 'single';
+                AppState.setState(state);
+            }
+        } else if (lastMode === 'all') {
+            state.viewMode = 'all';
+            AppState.setState(state);
+        } else {
+            state.viewMode = 'single';
+            AppState.setState(state);
+        }
+        // Скрываем контейнер
+        document.getElementById('powerCalculatorContainer').style.display = 'none';
+        // Восстанавливаем кнопку в сайдбаре
+        const powerBtn = document.getElementById('showPowerCalcBtn');
+        if (powerBtn) {
+            powerBtn.classList.remove('btn-inactive');
+            powerBtn.classList.add('btn-primary');
+            powerBtn.innerHTML = '<i class="fas fa-calculator"></i> Калькулятор питания';
+        }
+    }
+
+    function showPowerCalculator() {
+        const state = AppState.getState();
+        if (state.viewMode === 'power') return;
+        // Сохраняем предыдущий режим
+        previousViewMode = state.viewMode;
+        state.viewMode = 'power';
+        AppState.setState(state);
+
+        document.getElementById('activePathContainer').style.display = 'none';
+        document.getElementById('allTractsContainer').style.display = 'none';
+        document.getElementById('ergoCalculatorContainer').style.display = 'none';
+        document.getElementById('soundCalculatorContainer').style.display = 'none';
+        document.getElementById('ledCalculatorContainer').style.display = 'none';
+        document.getElementById('vcCalculatorContainer').style.display = 'none';
+        const powerContainer = document.getElementById('powerCalculatorContainer');
+        powerContainer.style.display = '';
+        render();
+
+        // Изменяем вид кнопки в сайдбаре
+        const powerBtn = document.getElementById('showPowerCalcBtn');
+        if (powerBtn) {
+            powerBtn.classList.remove('btn-primary');
+            powerBtn.classList.add('btn-inactive');
+            powerBtn.innerHTML = '<i class="fas fa-calculator"></i> Калькулятор питания';
+        }
+    }
+
     function init() {
         loadSettings();
         unsubscribe = AppState.subscribe(() => {
@@ -257,22 +329,5 @@ const PowerModule = (function() {
         if (unsubscribe) unsubscribe();
     }
 
-    function showPowerCalculator() {
-        const state = AppState.getState();
-        if (state.viewMode === 'power') return;
-        state.viewMode = 'power';
-        AppState.setState(state);
-
-        document.getElementById('activePathContainer').style.display = 'none';
-        document.getElementById('allTractsContainer').style.display = 'none';
-        document.getElementById('ergoCalculatorContainer').style.display = 'none';
-        document.getElementById('soundCalculatorContainer').style.display = 'none';
-        document.getElementById('ledCalculatorContainer').style.display = 'none';
-        document.getElementById('vcCalculatorContainer').style.display = 'none';
-        const powerContainer = document.getElementById('powerCalculatorContainer');
-        powerContainer.style.display = '';
-        render();
-    }
-
-    return { init, destroy, showPowerCalculator };
+    return { init, destroy, showPowerCalculator, closePowerCalculator };
 })();
