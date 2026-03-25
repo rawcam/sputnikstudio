@@ -523,7 +523,11 @@ const TractsModule = (function() {
     function renderEmptyState() {
         const container = document.getElementById('activePathContainer');
         container.innerHTML = `<div class="empty-state"><i class="fas fa-road"></i><h3>Нет трактов</h3><p>Создайте новый тракт, чтобы начать работу</p><button class="btn-primary" id="emptyStateAddPath"><i class="fas fa-plus"></i> Новый тракт</button></div>`;
-        document.getElementById('emptyStateAddPath')?.addEventListener('click', () => addNewPath());
+        const btn = document.getElementById('emptyStateAddPath');
+        if (btn && !btn._listener) {
+            btn._listener = true;
+            btn.addEventListener('click', () => addNewPath());
+        }
     }
 
     function renderPathsList() {
@@ -538,39 +542,47 @@ const TractsModule = (function() {
         document.getElementById('sidebarPathsList').innerHTML = html;
 
         document.querySelectorAll('.path-name').forEach(el => {
-            el.addEventListener('click', e => {
-                setActivePath(parseInt(el.dataset.pathId));
-                if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
-            });
+            el.removeEventListener('click', pathNameClick);
+            el.addEventListener('click', pathNameClick);
         });
+        function pathNameClick(e) {
+            setActivePath(parseInt(e.currentTarget.dataset.pathId));
+            if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
+        }
+
         document.querySelectorAll('.rename-path').forEach(btn => {
-            btn.addEventListener('click', e => {
-                e.stopPropagation();
-                const path = state.paths.find(p => p.id === parseInt(btn.dataset.pathId));
-                if (path) {
-                    let newName = prompt('Новое название тракта:', path.name);
-                    if (newName && newName.trim()) {
-                        path.name = newName.trim();
-                        AppState.setState(state);
-                    }
-                }
-            });
+            btn.removeEventListener('click', renamePathClick);
+            btn.addEventListener('click', renamePathClick);
         });
-        document.querySelectorAll('.delete-path').forEach(btn => {
-            btn.addEventListener('click', e => {
-                e.stopPropagation();
-                const path = state.paths.find(p => p.id === parseInt(btn.dataset.pathId));
-                if (path && confirm(`Удалить тракт "${path.name}"?`)) {
-                    [...path.sourceDevices, ...path.sinkDevices].forEach(dev => portManager.release(dev.id));
-                    state.paths = state.paths.filter(p => p.id !== path.id);
-                    if (state.activePathId === path.id) {
-                        if (state.paths.length) setActivePath(state.paths[0].id);
-                        else setActivePath(null);
-                    }
+        function renamePathClick(e) {
+            e.stopPropagation();
+            const path = state.paths.find(p => p.id === parseInt(e.currentTarget.dataset.pathId));
+            if (path) {
+                let newName = prompt('Новое название тракта:', path.name);
+                if (newName && newName.trim()) {
+                    path.name = newName.trim();
                     AppState.setState(state);
                 }
-            });
+            }
+        }
+
+        document.querySelectorAll('.delete-path').forEach(btn => {
+            btn.removeEventListener('click', deletePathClick);
+            btn.addEventListener('click', deletePathClick);
         });
+        function deletePathClick(e) {
+            e.stopPropagation();
+            const path = state.paths.find(p => p.id === parseInt(e.currentTarget.dataset.pathId));
+            if (path && confirm(`Удалить тракт "${path.name}"?`)) {
+                [...path.sourceDevices, ...path.sinkDevices].forEach(dev => portManager.release(dev.id));
+                state.paths = state.paths.filter(p => p.id !== path.id);
+                if (state.activePathId === path.id) {
+                    if (state.paths.length) setActivePath(state.paths[0].id);
+                    else setActivePath(null);
+                }
+                AppState.setState(state);
+            }
+        }
     }
 
     function calculateAll() {
@@ -675,10 +687,11 @@ const TractsModule = (function() {
                 }
             } else if (state.viewMode === 'all') {
                 renderAllTracts();
-            } else if (state.viewMode === 'led' || state.viewMode === 'sound' || state.viewMode === 'vc' || state.viewMode === 'ergo') {
-                // Другие модули управляют своим отображением, здесь ничего не делаем
             } else {
-                renderEmptyState();
+                // Для других модулей (led, sound, vc, ergo) ничего не делаем, они сами управляют контейнерами
+                // Но нужно скрыть контейнеры трактов, если они видны
+                document.getElementById('activePathContainer').innerHTML = '';
+                document.getElementById('allTractsContainer').innerHTML = '';
             }
             renderPathsList();
         } finally {
