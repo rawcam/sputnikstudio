@@ -12,12 +12,14 @@ const LedModule = (function() {
         return { pixelsW, pixelsH };
     }
 
-    // Рендер режима "По разрешению"
     function renderResolutionMode() {
         const state = AppState.getState();
         const ledConfig = state.ledConfig;
         const container = document.getElementById('ledCalculatorContainer');
-        if (!container) return;
+        if (!container) {
+            console.error('ledCalculatorContainer not found');
+            return;
+        }
 
         const pitchOptions = Utils.modelDB.ledScreen.map((m, i) =>
             `<option value="${i}" ${ledConfig.pitchIndex == i ? 'selected' : ''}>${m.name}</option>`
@@ -156,7 +158,6 @@ const LedModule = (function() {
         AppState.setState({ ledConfig });
     }
 
-    // Рендер режима "По кабинетам"
     function renderCabinetsMode() {
         const state = AppState.getState();
         const ledConfig = state.ledConfig;
@@ -200,7 +201,6 @@ const LedModule = (function() {
             </div>
         `;
 
-        // Обработчики
         const presetSel = document.getElementById('cabinetPresetSelect');
         const customDiv = document.getElementById('customCabinetSize');
         if (presetSel) {
@@ -249,7 +249,6 @@ const LedModule = (function() {
         document.getElementById('cabAreaResult').innerHTML = area.toFixed(2);
         document.getElementById('cabPowerResult').innerHTML = Math.round(power);
 
-        // Сохраняем в состояние
         const state = AppState.getState();
         const ledConfig = { ...state.ledConfig };
         ledConfig.activeMode = 'cabinets';
@@ -275,24 +274,35 @@ const LedModule = (function() {
         state.ledConfig.activeMode = mode;
         AppState.setState(state);
 
+        // Показываем контейнер
+        const ledContainer = document.getElementById('ledCalculatorContainer');
+        if (ledContainer) {
+            ledContainer.style.display = '';
+        }
+
+        // Скрываем другие контейнеры
         document.getElementById('activePathContainer').style.display = 'none';
         document.getElementById('allTractsContainer').style.display = 'none';
         document.getElementById('ergoCalculatorContainer').style.display = 'none';
         document.getElementById('soundCalculatorContainer').style.display = 'none';
         document.getElementById('vcCalculatorContainer').style.display = 'none';
-        const ledContainer = document.getElementById('ledCalculatorContainer');
-        ledContainer.style.display = '';
 
-        if (mode === 'resolution') renderResolutionMode();
-        else renderCabinetsMode();
+        if (mode === 'resolution') {
+            renderResolutionMode();
+        } else if (mode === 'cabinets') {
+            renderCabinetsMode();
+        }
     }
 
     function init() {
         unsubscribe = AppState.subscribe((newState) => {
             if (newState.viewMode === 'led' && newState.ledConfig.activeMode) {
                 const mode = newState.ledConfig.activeMode;
-                if (mode === 'resolution') renderResolutionMode();
-                else if (mode === 'cabinets') renderCabinetsMode();
+                if (mode === 'resolution') {
+                    renderResolutionMode();
+                } else if (mode === 'cabinets') {
+                    renderCabinetsMode();
+                }
             }
         });
 
@@ -311,8 +321,11 @@ const LedModule = (function() {
         const state = AppState.getState();
         if (state.viewMode === 'led' && state.ledConfig.activeMode) {
             const mode = state.ledConfig.activeMode;
-            if (mode === 'resolution') renderResolutionMode();
-            else if (mode === 'cabinets') renderCabinetsMode();
+            if (mode === 'resolution') {
+                renderResolutionMode();
+            } else if (mode === 'cabinets') {
+                renderCabinetsMode();
+            }
         }
     }
 
