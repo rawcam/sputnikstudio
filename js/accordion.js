@@ -25,16 +25,17 @@ const Accordion = (function() {
             localStorage.setItem(`section_${contentId}_collapsed`, isCollapsed);
         });
 
-        const sections = ['video', 'network', 'led', 'sound', 'vc', 'paths', 'networkStats', 'powerStats', 'manage', 'ergo'];
+        // Все секции, включая новую 'power'
+        const sections = ['video', 'network', 'led', 'sound', 'vc', 'paths', 'networkStats', 'powerStats', 'manage', 'ergo', 'power'];
         sections.forEach(sectionId => {
             const header = document.querySelector(`.section-header[data-section="${sectionId}"]`);
             const content = document.getElementById(`${sectionId}Content`);
             if (!header || !content) return;
 
-            // По умолчанию все секции закрыты, если нет сохранённого состояния
             let isCollapsed = localStorage.getItem(`section_${sectionId}_collapsed`);
             if (isCollapsed === null) {
-                isCollapsed = true; // закрыто по умолчанию
+                // По умолчанию все секции закрыты
+                isCollapsed = true;
             } else {
                 isCollapsed = (isCollapsed === 'true');
             }
